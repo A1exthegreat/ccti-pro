@@ -1,0 +1,14 @@
+<svg width="640" height="640" viewBox="0 0 640 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="XCTI badge">
+  <rect width="640" height="640" fill="#FEFAF2"/>
+  <path d="M0 410C72 382 130 383 204 414C278 445 348 445 430 410C514 374 579 380 640 410V640H0V410Z" fill="#4E6C50"/>
+  <path d="M0 471C82 445 153 449 234 477C317 505 400 508 493 476C555 455 601 454 640 466V640H0V471Z" fill="#829460"/>
+  <path d="M0 534C74 512 146 516 216 537C295 561 375 563 452 540C527 518 589 513 640 529V640H0V534Z" fill="#E6D5B8"/>
+  <path d="M112 168L320 60L528 168V278C528 381 444 464 320 528C196 464 112 381 112 278V168Z" fill="#FFFFFF" stroke="#1B241D" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M182 258C236 220 286 220 320 258C354 220 404 220 458 258" stroke="#4E6C50" stroke-width="22" stroke-linecap="round"/>
+  <path d="M190 340H450" stroke="#1B241D" stroke-width="18" stroke-linecap="round"/>
+  <path d="M224 396H416" stroke="#9A6B4F" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="320" cy="184" r="38" fill="#E6D5B8" stroke="#1B241D" stroke-width="14"/>
+  <path d="M256 306L320 260L384 306V382H256V306Z" fill="#F1EEE6" stroke="#1B241D" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M292 382V334H348V382" stroke="#1B241D" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M154 152L96 118M486 152L544 118M320 48V0" stroke="#1B241D" stroke-width="14" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>乡野青创 · CCTI</title>
+    <meta name="description" content="CCTI 乡创人格指数 H5 MVP">
+    <link rel="stylesheet" href="styles.css?v=20260519">
+  </head>
+  <body>
+    <svg aria-hidden="true" class="sprite">
+      <symbol id="icon-spark" viewBox="0 0 24 24">
+        <path d="M13 2 9.8 8.7 3 12l6.8 3.3L13 22l3.2-6.7L23 12l-6.8-3.3L13 2Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8"/>
+        <path d="M5 10v10h14V10"/>
+        <path d="M9 20v-6h6v6"/>
+      </symbol>
+      <symbol id="icon-map" viewBox="0 0 24 24">
+        <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/>
+        <path d="M9 3v15M15 6v15"/>
+      </symbol>
+      <symbol id="icon-card" viewBox="0 0 24 24">
+        <rect x="4" y="3" width="16" height="18" rx="2"/>
+        <path d="M8 8h8M8 12h6M8 16h4"/>
+      </symbol>
+      <symbol id="icon-leaf" viewBox="0 0 24 24">
+        <path d="M20 4C11 4 4 9.5 4 17c0 2 1 3 3 3 7.5 0 13-7 13-16Z"/>
+        <path d="M4 20c4-6 9-9 16-16"/>
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24">
+        <path d="M12 3v12"/>
+        <path d="m7 10 5 5 5-5"/>
+        <path d="M5 21h14"/>
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <rect x="8" y="8" width="12" height="12" rx="2"/>
+        <rect x="4" y="4" width="12" height="12" rx="2"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 12a8 8 0 1 1-2.3-5.7"/>
+        <path d="M20 4v6h-6"/>
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m5 12 4 4L19 6"/>
+      </symbol>
+      <symbol id="icon-chart" viewBox="0 0 24 24">
+        <path d="M4 20V4"/>
+        <path d="M4 20h16"/>
+        <rect x="7" y="11" width="3" height="6" rx="1"/>
+        <rect x="12" y="7" width="3" height="10" rx="1"/>
+        <rect x="17" y="9" width="3" height="8" rx="1"/>
+      </symbol>
+      <symbol id="icon-send" viewBox="0 0 24 24">
+        <path d="m22 2-7 20-4-9-9-4 20-7Z"/>
+        <path d="M22 2 11 13"/>
+      </symbol>
+      <symbol id="icon-users" viewBox="0 0 24 24">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </symbol>
+      <symbol id="icon-award" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="5"/>
+        <path d="m8.5 12 1 9 2.5-1.8 2.5 1.8 1-9"/>
+      </symbol>
+      <symbol id="icon-route" viewBox="0 0 24 24">
+        <circle cx="5" cy="19" r="2"/>
+        <circle cx="19" cy="5" r="2"/>
+        <path d="M7 19h4a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h8"/>
+      </symbol>
+    </svg>
+
+    <div id="app"></div>
+    <canvas id="exportCanvas" width="1080" height="1620" hidden></canvas>
+
+    <script>
+      var CCTI_CONFIG = { apiBase: "/api", useBackend: true, debug: false };
+    </script>
+    <script src="api.js"></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
