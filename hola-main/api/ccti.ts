@@ -49,7 +49,6 @@ const insertStmt = db.prepare(
   "INSERT INTO results (result_id, created_at, answers, personality, profile) VALUES (?, ?, ?, ?, ?)"
 );
 const selectStmt = db.prepare("SELECT * FROM results WHERE result_id = ?");
-const selectAllStmt = db.prepare("SELECT * FROM results ORDER BY created_at DESC");
 const updateBindStmt = db.prepare(
   "UPDATE results SET bound_to = ?, bound_at = ? WHERE result_id = ?"
 );
@@ -69,27 +68,33 @@ function rowToResult(row: any): CctiResult {
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 function uid(): string {
-  return `r_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  return `r_${crypto.randomUUID()}`;
 }
 
-function corsHeaders(): Record<string, string> {
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "").split(",").filter(Boolean);
+
+function corsHeaders(req?: Request): Record<string, string> {
+  const origin = req?.headers.get("origin") ?? "";
+  const allowOrigin = ALLOWED_ORIGINS.length
+    ? (ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0])
+    : (origin || "*");
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
-function json(data: unknown, status = 200): Response {
+function json(data: unknown, status = 200, req?: Request): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders() },
+    headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders(req) },
   });
 }
 
 // Handle CORS preflight
-function handleOptions(): Response {
-  return new Response(null, { status: 204, headers: corsHeaders() });
+function handleOptions(req: Request): Response {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
 }
 
 // ── POST /api/submit ────────────────────────────────────────────────────
@@ -98,11 +103,11 @@ async function handleSubmit(req: Request): Promise<Response> {
   try {
     body = await req.json();
   } catch {
-    return json({ ok: false, error: "invalid-json" }, 400);
+    return json({ ok: false, error: "invalid-json" }, 400, req);
   }
 
   if (!body.answers || typeof body.answers !== "object") {
-    return json({ ok: false, error: "answers-required" }, 400);
+    return json({ ok: false, error: "answers-required" }, 400, req);
   }
 
   const resultId = uid();
@@ -114,27 +119,21 @@ async function handleSubmit(req: Request): Promise<Response> {
     body.profile ? JSON.stringify(body.profile) : null
   );
 
-  return json({ ok: true, resultId });
+  return json({ ok: true, resultId }, 200, req);
 }
 
 // ── GET /api/result/:id ─────────────────────────────────────────────────
-async function handleGetResult(_req: Request, resultId: string): Promise<Response> {
+async function handleGetResult(req: Request, resultId: string): Promise<Response> {
   const row = selectStmt.get(resultId);
-  if (!row) return json({ ok: false, error: "not-found" }, 404);
+  if (!row) return json({ ok: false, error: "not-found" }, 404, req);
 
-  return json({ ok: true, result: rowToResult(row) });
-}
-
-// ── GET /api/results ────────────────────────────────────────────────────
-async function handleListResults(): Promise<Response> {
-  const rows = selectAllStmt.all();
-  return json({ ok: true, results: rows.map(rowToResult) });
+  return json({ ok: true, result: rowToResult(row) }, 200, req);
 }
 
 // ── GET /api/me ─────────────────────────────────────────────────────────
 async function handleMe(req: Request): Promise<Response> {
   const session = await getSession(req);
-  if (!session) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!session) return json({ ok: false, error: "unauthorized" }, 401, req);
 
   const u = session.user;
   return json({
@@ -143,39 +142,45 @@ async function handleMe(req: Request): Promise<Response> {
     handle: u.handle ?? null,
     wallet_address: u.wallet_address ?? null,
     avatar: null,
-  });
+  }, 200, req);
 }
 
 // ── POST /api/bind ──────────────────────────────────────────────────────
 async function handleBind(req: Request): Promise<Response> {
   const session = await getSession(req);
-  if (!session) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!session) return json({ ok: false, error: "unauthorized" }, 401, req);
 
   let body: { resultId?: string };
   try {
     body = await req.json();
   } catch {
-    return json({ ok: false, error: "invalid-json" }, 400);
+    return json({ ok: false, error: "invalid-json" }, 400, req);
   }
 
-  if (!body.resultId) return json({ ok: false, error: "resultId-required" }, 400);
+  if (!body.resultId) return json({ ok: false, error: "resultId-required" }, 400, req);
 
   const row = selectStmt.get(body.resultId);
-  if (!row) return json({ ok: false, error: "not-found" }, 404);
+  if (!row) return json({ ok: false, error: "not-found" }, 404, req);
+
+  // 如果已绑定其他人，拒绝覆盖
+  const existing = rowToResult(row);
+  if (existing.boundTo && existing.boundTo !== session.user.sub) {
+    return json({ ok: false, error: "already-bound" }, 409, req);
+  }
 
   const semiDid = session.user.sub;
   updateBindStmt.run(semiDid, new Date().toISOString(), body.resultId);
 
-  return json({ ok: true, resultId: body.resultId, boundTo: semiDid });
+  return json({ ok: true, resultId: body.resultId, boundTo: semiDid }, 200, req);
 }
 
 // ── GET /api/my-results ─────────────────────────────────────────────────
 async function handleMyResults(req: Request): Promise<Response> {
   const session = await getSession(req);
-  if (!session) return json({ ok: false, error: "unauthorized" }, 401);
+  if (!session) return json({ ok: false, error: "unauthorized" }, 401, req);
 
   const rows = selectByUserStmt.all(session.user.sub);
-  return json({ ok: true, results: rows.map(rowToResult) });
+  return json({ ok: true, results: rows.map(rowToResult) }, 200, req);
 }
 
 // ── Router ──────────────────────────────────────────────────────────────
@@ -183,7 +188,7 @@ export default async function cctiHandler(req: Request): Promise<Response | null
   const url = new URL(req.url);
   const { pathname } = url;
 
-  if (req.method === "OPTIONS") return handleOptions();
+  if (req.method === "OPTIONS") return handleOptions(req);
 
   // POST /api/submit
   if (pathname === "/api/submit" && req.method === "POST") {
@@ -198,11 +203,6 @@ export default async function cctiHandler(req: Request): Promise<Response | null
   // GET /api/my-results
   if (pathname === "/api/my-results" && req.method === "GET") {
     return handleMyResults(req);
-  }
-
-  // GET /api/results
-  if (pathname === "/api/results" && req.method === "GET") {
-    return handleListResults();
   }
 
   // GET /api/result/:id

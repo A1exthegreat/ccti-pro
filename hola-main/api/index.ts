@@ -38,6 +38,18 @@ function base64url(bytes: Uint8Array): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
 }
 
+// ── Redirect validation ────────────────────────────────────────────────
+function isSafeRedirect(uri: string): boolean {
+  if (!uri) return false
+  // Only allow relative paths (starting with / but not //)
+  if (uri.startsWith("/") && !uri.startsWith("//")) return true
+  // Allow localhost in dev
+  if (uri.startsWith("http://localhost:") || uri.startsWith("https://localhost:")) return true
+  // Allow configured redirect URI
+  if (REDIRECT_URI && uri.startsWith(REDIRECT_URI)) return true
+  return false
+}
+
 // ── HTML escaping ─────────────────────────────────────────────────────
 function esc(s: unknown): string {
   return String(s ?? "")
@@ -194,9 +206,9 @@ async function handleLogin(url: URL): Promise<Response> {
   headers.set("Location", `${SEMI_FRONTEND}/oauth/authorize?${params}`)
   headers.append("Set-Cookie", setPkceCookie(state, codeVerifier))
 
-  // Store return-to URL for after OAuth callback
+  // Store return-to URL for after OAuth callback — only allow relative paths
   const redirectAfterLogin = url.searchParams.get("redirect_uri")
-  if (redirectAfterLogin) {
+  if (redirectAfterLogin && isSafeRedirect(redirectAfterLogin)) {
     headers.append("Set-Cookie", setCookie("hola_redirect", encodeURIComponent(redirectAfterLogin), 600))
   }
 
@@ -266,7 +278,8 @@ async function handleCallback(req: Request, url: URL): Promise<Response> {
   const redirectAfterLogin = getCookie(req, "hola_redirect")
   if (redirectAfterLogin) {
     headers.append("Set-Cookie", clearCookie("hola_redirect"))
-    headers.set("Location", decodeURIComponent(redirectAfterLogin))
+    const decoded = decodeURIComponent(redirectAfterLogin)
+    headers.set("Location", isSafeRedirect(decoded) ? decoded : "/")
   } else {
     headers.set("Location", "/profile")
   }
@@ -310,11 +323,23 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Static file serving from public/
   const PUBLIC_DIR = join(import.meta.dir, "..", "public")
-  const filePath = pathname === "/" ? join(PUBLIC_DIR, "index.html") : join(PUBLIC_DIR, pathname)
+
+  // 防止路径穿越：拒绝绝对路径和包含 .. 的路径
+  const safePath = pathname === "/" ? "/index.html" : pathname
+  if (safePath.includes("..") || safePath.startsWith("/..")) {
+    return new Response("Forbidden", { status: 403 })
+  }
+
+  // 规范化路径并确保在 PUBLIC_DIR 内
+  const resolved = join(PUBLIC_DIR, safePath)
+  if (!resolved.startsWith(PUBLIC_DIR)) {
+    return new Response("Forbidden", { status: 403 })
+  }
+
   try {
-    const file = Bun.file(filePath)
+    const file = Bun.file(resolved)
     if (await file.exists()) {
-      const mime = MIME_TYPES[extname(filePath)] || "application/octet-stream"
+      const mime = MIME_TYPES[extname(resolved)] || "application/octet-stream"
       return new Response(file, { headers: { "Content-Type": mime } })
     }
   } catch { /* file not found */ }

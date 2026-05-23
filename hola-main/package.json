@@ -6,5 +6,8 @@
     "dev": "bun --watch server.ts",
     "start": "bun server.ts",
     "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   }
 }

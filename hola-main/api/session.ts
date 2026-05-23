@@ -1,7 +1,17 @@
 // Shared session helpers — used by both Hola OAuth routes and CCTI API endpoints.
 
-const SESSION_SECRET = process.env.SESSION_SECRET ?? "dev-secret";
+const SESSION_SECRET = process.env.SESSION_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI ?? "";
+
+function requireSecret() {
+  if (!SESSION_SECRET || SESSION_SECRET === "dev-secret") {
+    throw new Error("SESSION_SECRET 未设置或使用不安全默认值，请设置强随机密钥。生成方式: openssl rand -hex 32");
+  }
+}
+
+// 延迟校验，让 import 不报错；首次调用 cookie 相关函数时触发
+let secretChecked = false;
+function ensureSecret() { if (!secretChecked) { requireSecret(); secretChecked = true; } }
 
 export interface UserInfo {
   sub: string;
@@ -55,9 +65,11 @@ async function hmacSign(payload: string): Promise<string> {
 }
 
 export async function createSessionCookie(session: Session): Promise<string> {
+  ensureSecret();
   const payload = base64url(new TextEncoder().encode(JSON.stringify(session)));
   const sig = await hmacSign(payload);
-  const secure = REDIRECT_URI.startsWith("https") ? "; Secure" : "";
+  const isSecure = REDIRECT_URI.startsWith("https");
+  const secure = isSecure ? "; Secure" : "";
   return `hola_sid=${payload}.${sig}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax${secure}`;
 }
 
@@ -78,7 +90,8 @@ export async function getSession(req: Request): Promise<Session | null> {
 
 // ── Plain cookie helpers ────────────────────────────────────────────────
 export function setCookie(name: string, value: string, maxAgeSeconds = 600): string {
-  return `${name}=${value}; HttpOnly; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax`;
+  const secure = REDIRECT_URI.startsWith("https") ? "; Secure" : "";
+  return `${name}=${value}; HttpOnly; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 export function getCookie(req: Request, name: string): string | null {
