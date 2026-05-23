@@ -1178,7 +1178,10 @@ function renderHome() {
   return `
     <main class="home-page">
       <section class="home-hero">
-        <span class="scene-label">H5 MVP</span>
+        <div class="home-logo">
+          <img src="assets/main.png" alt="乡野青创">
+        </div>
+        <p class="home-subtitle">CCTI 乡创者人格测试</p>
         <h1>找到属于你的<br>乡创人格</h1>
         <p>${questions.length} 道情境题，测出你的乡建者人格类型，匹配最适合的乡村与共创任务。</p>
         <div class="hero-actions">
@@ -1187,29 +1190,11 @@ function renderHome() {
           </button>
           ${result ? `
             <button class="btn btn-ghost" data-screen="atlas">浏览全部 ${archetypes.length} 种人格</button>
-          ` : ""}
+          ` : `
+            <button class="btn btn-ghost" data-screen="atlas">先看看 ${archetypes.length} 种人格图鉴</button>
+          `}
         </div>
       </section>
-
-      <section class="quick-links">
-        <div class="quick-link" data-screen="atlas">
-          <span class="link-icon">📋</span>
-          <strong>人格图鉴</strong>
-          <span>${archetypes.length} 种类型</span>
-        </div>
-        <div class="quick-link" data-screen="${result ? "villages" : "test"}">
-          <span class="link-icon">🏘️</span>
-          <strong>村庄匹配</strong>
-          <span>${villageProfiles.length} 个村庄</span>
-        </div>
-        <div class="quick-link" data-screen="${result ? "tasks" : "test"}">
-          <span class="link-icon">🌱</span>
-          <strong>共创任务</strong>
-          <span>${tasks.length} 个任务</span>
-        </div>
-      </section>
-
-      ${renderMvpKpis()}
     </main>
   `;
 }
